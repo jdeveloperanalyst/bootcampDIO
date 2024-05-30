@@ -15,7 +15,7 @@ def menu_principal():
 def depositar(saldo, valor, extrato):
     if valor > 0:
         saldo += valor
-        extrato.append(f'{valor:.2f}')
+        extrato.append(f"{'Deposito'.ljust(32, '.')}R${valor:.2f}")
     else:
         print("Operação falhou! O valor informado é inválido.")
     return saldo , extrato
@@ -33,15 +33,22 @@ def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
         print('Operação falhou! Número máximo de saques excedido.\n')
     elif valor > 0:
         saldo -= valor
-        extrato.append(f'{valor:.2f}')
+        extrato.append(f"{'Saque'.ljust(32, '.')}R${valor:.2f}")
         numero_saques += 1
     else:
         print('Operação falhou! O valor informado é inválido.\n')
     return saldo, extrato, numero_saques
 
 
-
-def extrato():
+def extrato(saldo,/,*,extrato):
+    print("\n================ EXTRATO ================")
+    if extrato:
+        for transacao in extrato:
+            print(transacao)
+    else:
+        print('Não foram realizadas movimentações.')
+    print(f"\n{'Saldo'.ljust(32, '.')}R${saldo:.2f}")
+    print("=========================================\n")
     return ''
 
 
@@ -52,12 +59,16 @@ if __name__ == '__main__':
     while True:
         opcao = int(input(menu_principal()))
         if opcao == 1:
-            valor = float(input("Informe o valor do depósito: "))
+            valor = float(input("\nInforme o valor do depósito: "))
+            print()
             saldo, extrato_detalhado =  depositar(saldo, valor, extrato_detalhado)
-            print(f'{saldo}, {extrato_detalhado}\n')
         elif opcao == 2:
-            valor = float(input("Informe o valor do saque: "))
+            valor = float(input("\nInforme o valor do saque: "))
+            print()
             saldo, extrato_detalhado, numero_saques = sacar(saldo=saldo, valor=valor, extrato=extrato_detalhado, limite=500, numero_saques=numero_saques, limite_saques=3)
-            print(f'{saldo}, {extrato_detalhado}\n')
+        elif opcao == 3:
+            extrato(saldo, extrato=extrato_detalhado)
         elif opcao == 0:
             break
+        else:
+            print('\nOpção invalida, por favor selecione novamente a operação realizada.\n')
