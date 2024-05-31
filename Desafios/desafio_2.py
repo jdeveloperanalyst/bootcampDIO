@@ -1,7 +1,7 @@
 # Refatorando o sistema Bancário do desafio_1 com Python v.2
 
 def menu_principal():
-    menu = '''########MENU########
+    menu = f'''\n{'MENU'.center(41, '#')}
 
 [1] - Depositar
 [2] - Sacar
@@ -15,9 +15,9 @@ def menu_principal():
 def depositar(saldo, valor, extrato):
     if valor > 0:
         saldo += valor
-        extrato.append(f"{'Deposito'.ljust(32, '.')}R${valor:.2f}")
+        extrato.append(f'{"Deposito".ljust(32, ".")}R${valor:.2f}')
     else:
-        print("Operação falhou! O valor informado é inválido.")
+        print('Operação falhou! O valor informado é inválido.')
     return saldo , extrato
 
 
@@ -26,29 +26,29 @@ def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
     excedeu_limite = valor > limite
     excedeu_saques = numero_saques > limite_saques
     if excedeu_saldo:
-        print('Operação falhou! Você não tem saldo suficiente.\n')
+        print('Operação falhou! Você não tem saldo suficiente.')
     elif excedeu_limite:
-        print('Operação falhou! O valor do saque excede o limite.\n')
+        print('Operação falhou! O valor do saque excede o limite.')
     elif excedeu_saques:
-        print('Operação falhou! Número máximo de saques excedido.\n')
+        print('Operação falhou! Número máximo de saques excedido.')
     elif valor > 0:
         saldo -= valor
-        extrato.append(f"{'Saque'.ljust(32, '.')}R${valor:.2f}")
+        extrato.append(f'{"Saque".ljust(32, ".")}R${valor:.2f}')
         numero_saques += 1
     else:
-        print('Operação falhou! O valor informado é inválido.\n')
+        print('Operação falhou! O valor informado é inválido.')
     return saldo, extrato, numero_saques
 
 
 def extrato(saldo,/,*,extrato):
-    print("\n================ EXTRATO ================")
+    print('\n================ EXTRATO ================')
     if extrato:
         for transacao in extrato:
             print(transacao)
     else:
         print('Não foram realizadas movimentações.')
-    print(f"\n{'Saldo'.ljust(32, '.')}R${saldo:.2f}")
-    print("=========================================\n")
+    print(f'\n{"Saldo".ljust(32, ".")}R${saldo:.2f}')
+    print('=========================================')
     return ''
 
 
@@ -59,16 +59,15 @@ if __name__ == '__main__':
     while True:
         opcao = int(input(menu_principal()))
         if opcao == 1:
-            valor = float(input("\nInforme o valor do depósito: "))
-            print()
+            valor = float(input('\nInforme o valor do depósito: '))
             saldo, extrato_detalhado =  depositar(saldo, valor, extrato_detalhado)
         elif opcao == 2:
-            valor = float(input("\nInforme o valor do saque: "))
-            print()
+            valor = float(input('\nInforme o valor do saque: '))
             saldo, extrato_detalhado, numero_saques = sacar(saldo=saldo, valor=valor, extrato=extrato_detalhado, limite=500, numero_saques=numero_saques, limite_saques=3)
         elif opcao == 3:
             extrato(saldo, extrato=extrato_detalhado)
         elif opcao == 0:
+            print(f'\nMuito Obrigado por utilizar os nossos serviços.\nVolte Sempre :)\n')
             break
         else:
-            print('\nOpção invalida, por favor selecione novamente a operação realizada.\n')
+            print('\nOpção invalida, por favor selecione novamente a operação realizada.')
