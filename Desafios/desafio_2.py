@@ -16,7 +16,7 @@ def menu_principal():
     return menu
 
 
-def depositar(saldo, valor, extrato):
+def depositar(saldo, valor, extrato,/):
     if valor > 0:
         saldo += valor
         extrato.append(f'{"Deposito".ljust(32, ".")}R${valor:.2f}')
@@ -67,12 +67,7 @@ def criar_usuario(list_users):
             return list_users
     endereco = ' - '.join([str(input('Logradouro => ')), str(input('Número => ')), str(input('Bairro => ')), str(input('Cidade/Sigla Estado => '))])
     
-    usuario = {
-        'nome': nome,
-        'data nascimento': data_nascimento,
-        'cpf': cpf,
-        'endereço': endereco 
-    }
+    usuario = {'nome': nome, 'data nascimento': data_nascimento, 'cpf': cpf, 'endereço': endereco}
     list_users.append(usuario)
     return list_users
 
@@ -81,7 +76,7 @@ def criar_conta_corrente(list_users, contas):
     if len(list_users) > 0:
         cpf = int(input('Informe o cpf(sem pontos/traços) => '))
         cpf_encontrado = False
-        for user in list_users:
+        for user in list_users: 
             if cpf == user['cpf']:
                 conta = ' | '.join(['agência: 0001', f'conta {len(contas)+1}'])
                 contas.append(conta)
