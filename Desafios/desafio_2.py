@@ -155,3 +155,4 @@ if __name__ == '__main__':
             break
         else:
             print('\nOpção invalida, por favor selecione novamente a operação realizada.')
+            print('teste')
