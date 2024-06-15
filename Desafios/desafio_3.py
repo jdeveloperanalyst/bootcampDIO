@@ -99,7 +99,7 @@ class ContaCorrente(Conta):
         
     
     def sacar(self, valor):
-        numero_saques = len([transacao for transacao in self.historico.transacoes if transacao['tipo'] == saque.__name__])
+        numero_saques = len([transacao for transacao in self.historico.transacoes if transacao['tipo'] == Saque.__name__])
         
         excedeu_limite = valor > self.limite
         excedeu_saques = numero_saques >= self.limite_saques
