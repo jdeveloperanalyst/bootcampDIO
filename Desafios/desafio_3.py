@@ -2,6 +2,30 @@ from abc import ABC, abstractmethod, abstractproperty
 from datetime import datetime
 import textwrap
 
+
+class ContasIterador:
+    def __init__(self, contas):
+        self.contas = contas
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            conta = self.contas[self._index]
+            return f'''\
+            Agência:\t{conta.agencia}
+            Número:\t\t{conta.numero}
+            Titular:\t{conta.cliente.nome}
+            Saldo:\t\tR$ {conta.saldo:.2f}
+        '''
+        except IndexError:
+            raise StopIteration
+        finally:
+            self._index += 1
+            
+            
 class Historico:
     def __init__(self):
         self._transacoes = []
@@ -19,7 +43,22 @@ class Historico:
                 'data': datetime.now().strftime('%d-%m-%Y %H:%M:%S')
             }
         )
-        
+    
+    
+    def gerar_relatorio(self, tipo_transacao=None):
+        for transacao in self._transacoes:
+            if tipo_transacao is None or transacao["tipo"].lower() == tipo_transacao.lower():
+                yield transacao
+    
+    
+    def transacoes_do_dia(self):
+        data_atual = datetime.now().date()
+        transacoes = []
+        for transacao in self._transacoes:
+            data_transacao = datetime.strptime(transacao['data'], '%d-%m-%Y %H:%M:%S').date()
+            if data_atual == data_transacao:
+                transacoes.append(transacao)
+        return transacoes    
 
 class Conta:
     def __init__(self, numero, cliente):
@@ -129,9 +168,14 @@ class Cliente:
     def __init__(self, endereco):
         self.endereco    = endereco
         self.contas      = []
+        self._indice_conta = 0
     
     
-    def realizar_transacao(cls, conta, transacao):
+    def realizar_transacao(self, conta, transacao):
+        if len(conta.historico.transacoes_do_dia()) >= 2:
+            print('\n@@@ Você excedeu o número de transações permitidas para hoje! @@@')
+            return
+        
         transacao.registrar(conta)
 
     
@@ -195,7 +239,34 @@ class Saque(Transacao):
         
 
 def log_transacao(func):
-    pass
+    def logs(*args, **kwargs):
+        if func.__name__ == 'depositar':
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} DEPOSITO {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        
+        elif func.__name__ == 'sacar':
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} SAQUE {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+            
+        elif func.__name__ == 'exibir_extrato':
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} EXTRATO {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        
+        elif func.__name__ == 'criar_cliente':
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} NOVO CLIENTE {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+            
+        elif func.__name__ == 'criar_conta':
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} NOVA CONTA {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        return result
+    
+    return logs
 
 
 def menu():
@@ -212,6 +283,24 @@ def menu():
     return int(input(textwrap.dedent(menu)))
 
 
+def menu_extrato():
+    menu = '''\n
+    ================ EXTRATO ================
+    [1]\tExtrato detalhado - (Geral)
+    [2]\tExtrato por operação - (Saques ou Depositos)
+    => '''
+    return int(input(textwrap.dedent(menu)))
+
+
+def menu_tipo_operacao():
+    tipo_operacao = '''\n
+    Qual o tipo de operação desejada?
+    [1]\tDepositos
+    [2]\tSaques
+    => '''
+    return int(input(textwrap.dedent(tipo_operacao)))
+
+
 def filtrar_cliente(cpf, clientes):
     clientes_filtrados = [cliente for cliente in clientes if cliente.cpf == cpf]
     return clientes_filtrados[0] if clientes_filtrados else None
@@ -226,7 +315,7 @@ def recuperar_conta_cliente(cliente):
     return cliente.contas[0]
 
 
-# @log_transacao
+@log_transacao
 def depositar(clientes):
     cpf = input('Informe o CPF do cliente: ')
     cliente = filtrar_cliente(cpf, clientes)
@@ -245,7 +334,7 @@ def depositar(clientes):
     cliente.realizar_transacao(conta, transacao)
 
 
-# @log_transacao
+@log_transacao
 def sacar(clientes):
     cpf = input('Informe o CPF do cliente: ')
     cliente = filtrar_cliente(cpf, clientes)
@@ -264,7 +353,7 @@ def sacar(clientes):
     cliente.realizar_transacao(conta, transacao)
 
 
-# @log_transacao
+@log_transacao
 def exibir_extrato(clientes):
     cpf = input('Informe o CPF do cliente: ')
     cliente = filtrar_cliente(cpf, clientes)
@@ -277,22 +366,39 @@ def exibir_extrato(clientes):
     if not conta:
         return
 
-    print('\n================ EXTRATO ================')
-    transacoes = conta.historico.transacoes
-
     extrato = ''
-    if not transacoes:
-        extrato = 'Não foram realizadas movimentações.'
-    else:
-        for transacao in transacoes:
-            tipo_transacao = transacao["tipo"]
-            valor_transacao = f'R${transacao["valor"]:.2f}'
-            data_transacao = transacao["data"]
-            num_pontos = 40 - len(tipo_transacao) - len(valor_transacao) - len(data_transacao)
-            extrato += f'\n{tipo_transacao}{"." * num_pontos}{valor_transacao}  {data_transacao}'
+    tem_transacao = False
+    
+    while True:
+        opcao = menu_extrato()
+        if opcao == 1:
+            flag = None
+            break
+        elif opcao == 2:
+            tipo_operacao = menu_tipo_operacao()
+            if tipo_operacao == 1:
+                flag = 'deposito'
+                break
+            elif tipo_operacao == 2:
+                flag = 'saque'
+                break
+            else:
+                print("\n@@@ Operação inválida, por favor selecione novamente a operação desejada. @@@")
+        else:
+            print("\n@@@ Operação inválida, por favor selecione novamente a operação desejada. @@@")
+    for transacao in conta.historico.gerar_relatorio(tipo_transacao=flag):
+        tem_transacao = True
+        tipo_transacao = transacao['tipo']
+        valor_transacao = f'R${transacao["valor"]:.2f}'
+        data_transacao = transacao['data']
+        num_pontos = 40 - len(tipo_transacao) - len(valor_transacao) - len(data_transacao)
+        extrato += f'\n{tipo_transacao}{"." * num_pontos}{valor_transacao}  {data_transacao}'
 
+    if not tem_transacao:
+        extrato = "Não foram realizadas movimentações"
+        
     saldo_str = f'R${conta.saldo:.2f}'
-    num_pontos_saldo = 40 - len('Saldo') - len(saldo_str) - len(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+    num_pontos_saldo = 40 - len('Saldo') - len(saldo_str) - len(datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
     saldo = f'\nSaldo{"." * num_pontos_saldo}{saldo_str}  {datetime.now().strftime("%d-%m-%Y %H:%M:%S")}'
 
     print(extrato)
@@ -300,7 +406,7 @@ def exibir_extrato(clientes):
     print('==========================================')
 
 
-# # @log_transacao
+@log_transacao
 def criar_cliente(clientes):
     cpf = input('Informe o CPF (somente número): ')
     cliente = filtrar_cliente(cpf, clientes)
@@ -320,7 +426,7 @@ def criar_cliente(clientes):
     print('\n=== Cliente criado com sucesso! ===')
 
 
-# # @log_transacao
+@log_transacao
 def criar_conta(numero_conta, clientes, contas):
     cpf = input('Informe o CPF do cliente: ')
     cliente = filtrar_cliente(cpf, clientes)
@@ -337,8 +443,8 @@ def criar_conta(numero_conta, clientes, contas):
 
 
 def listar_contas(contas):
-    for conta in contas:
-        print('=' * 100)
+    for conta in ContasIterador(contas):
+        print("=" * 100)
         print(textwrap.dedent(str(conta)))
 
 

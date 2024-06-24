@@ -2,19 +2,16 @@ from datetime import datetime
 
 
 def registra_log(func):
-    hour_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     def logs(*args, **kwargs):
         mensagem = ''
         if func.__name__ == 'deposito':
-            valor = func(*args, **kwargs)
-            mensagem = f'Deposito realizado no valor de R${valor} reais.'
-            modalidade = 'MODALIDADE'
-            linha = '=' * 15
-            print('MODALIDADE')
-            print(linha, modalidade, linha)
-            print(f'DEPOSITO\t{hour_now}')
+            result = func(*args, **kwargs)
+            linha = '=' * 10
+            print(f'{linha} DEPOSITO {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+            print('Deposito realizado no valor de R$ reais.')
             
-        return mensagem
+        return result
     
     return logs
 
