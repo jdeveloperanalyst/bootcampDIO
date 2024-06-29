@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod, abstractproperty
 from datetime import datetime
 import textwrap
+from pathlib import Path
+
+
+ROOT_PATH = Path(__file__).parent
 
 
 class ContasIterador:
@@ -137,6 +141,9 @@ class ContaCorrente(Conta):
         self.limite = limite
         self.limite_saques = limite_saques
         
+    @classmethod
+    def nova_conta(cls, cliente, numero, limite, limite_saques):
+        return cls(numero, cliente, limite, limite_saques)    
     
     def sacar(self, valor):
         numero_saques = len([transacao for transacao in self.historico.transacoes if transacao['tipo'] == Saque.__name__])
@@ -155,7 +162,9 @@ class ContaCorrente(Conta):
         
         return False
     
-    
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: ('{self.agencia}', '{self.numero}', '{self.cliente.nome}')>"
+
     def __str__(self):
         return f'''\
             Agência:\t{self.agencia}
@@ -189,6 +198,9 @@ class PessoaFisica(Cliente):
         self.cpf             = cpf
         self.nome            = nome
         self.data_nascimento = data_nascimento
+        
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: ('{self.nome}, {self.cpf}')>"
 
 
 class Transacao(ABC):
@@ -240,30 +252,17 @@ class Saque(Transacao):
 
 def log_transacao(func):
     def logs(*args, **kwargs):
-        if func.__name__ == 'depositar':
-            result = func(*args, **kwargs)
-            linha = '=' * 10
-            print(f'{linha} DEPOSITO {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        data_hora = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        result = func(*args, **kwargs)
+        linha = '=' * 10
         
-        elif func.__name__ == 'sacar':
-            result = func(*args, **kwargs)
-            linha = '=' * 10
-            print(f'{linha} SAQUE {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
-            
-        elif func.__name__ == 'exibir_extrato':
-            result = func(*args, **kwargs)
-            linha = '=' * 10
-            print(f'{linha} EXTRATO {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        with open(ROOT_PATH /'log_desafio_4/log.txt', 'a') as arquivo:
+            arquivo.write(
+                f"[{data_hora}] Função '{func.__name__}' executada com argumentos {args} e {kwargs}."
+                f"Retornou {result}\n"
+            )
         
-        elif func.__name__ == 'criar_cliente':
-            result = func(*args, **kwargs)
-            linha = '=' * 10
-            print(f'{linha} NOVO CLIENTE {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
-            
-        elif func.__name__ == 'criar_conta':
-            result = func(*args, **kwargs)
-            linha = '=' * 10
-            print(f'{linha} NOVA CONTA {datetime.now().strftime("%d-%m-%Y %H:%M:%S")} {linha}')
+        print(f'{linha} {func.__name__ .upper()} {data_hora} {linha}')
         return result
     
     return logs
@@ -435,7 +434,7 @@ def criar_conta(numero_conta, clientes, contas):
         print('\n@@@ Cliente não encontrado, fluxo de criação de conta encerrado! @@@')
         return
 
-    conta = ContaCorrente.nova_conta(cliente=cliente, numero=numero_conta)
+    conta = ContaCorrente.nova_conta(cliente=cliente, numero=numero_conta, limite=500, limite_saques=3)
     contas.append(conta)
     cliente.contas.append(conta)
 
